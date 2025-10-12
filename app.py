@@ -5,16 +5,28 @@ import os
 import json
 import re
 
+# --- Basic Flask App Setup ---
 app = Flask(__name__)
 CORS(app) # Enable CORS for all routes, so frontend can communicate
 
 # --- Configure Google Generative AI ---
-# WARNING: Directly embedding your API key in code is NOT recommended for deployment.
-# It is used here for simplified local testing. For production, ALWAYS use environment variables.
-GOOGLE_API_KEY = "AIzaSyAbDRav7Kj6yRVBEJMFaUPz0SbKDe6weoM" # Your provided API key
-genai.configure(api_key=GOOGLE_API_KEY)
+# IMPORTANT: This code will first try to get the API key from Render's environment variables.
+# If that fails (like when you run it locally), it falls back to the hardcoded key.
+# This makes the code work both locally and when deployed without changes.
+try:
+    # This is the PROD way (used by Render)
+    genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+except KeyError:
+    # This is the DEV way (for local testing)
+    print("WARNING: GOOGLE_API_KEY environment variable not found. Using hardcoded key for local testing.")
+    print("This is NOT recommended for production.")
+    GOOGLE_API_KEY = "AIzaSyAbDRav7Kj6yRVBEJMFaUPz_SbKDe6weoM" # Your provided API key
+    genai.configure(api_key=GOOGLE_API_KEY)
 
-model = genai.GenerativeModel('gemini-pro-latest') # Using the generally available Gemini Pro Latest
+
+# --- AI Model Selection ---
+model = genai.GenerativeModel('gemini-pro-latest')
+
 
 # --- Helper function to parse AI's text response into structured JSON ---
 def parse_quiz_response(text_response):
@@ -65,6 +77,7 @@ def parse_quiz_response(text_response):
             print(f"Failed to parse a question block. Missing components in: \n---Block---\n{block_clean}\n---End Block---")
     return questions
 
+
 # --- API Endpoint to Generate Quiz Questions ---
 @app.route('/generate_quiz', methods=['POST'])
 def generate_quiz():
@@ -79,11 +92,10 @@ def generate_quiz():
 
     lang_instructions = ""
     if language == 'hindi':
-        lang_instructions = """
+        lang_instructions = f"""
         Generate all questions, options, correct answers, and solutions in HINDI.
+        The topic is "{chapter}" in the subject "{subject}".
         Use Hindi equivalents for "Question", "Options", "Correct Answer", and "Solution" in the format.
-        Use Devanagari numerals for question numbering if possible.
-        The topic "{chapter}" is in Hindi, so generate content based on its meaning.
         """
         question_tag = "प्रश्न"
         options_tag = "विकल्प"
@@ -125,7 +137,7 @@ def generate_quiz():
         questions = parse_quiz_response(generated_text)
         if not questions:
             print("Parsing resulted in zero questions.")
-            return jsonify({"error": "AI generated no parsable questions. Please try again. Raw response might be in console.", "raw_response": generated_text}), 500
+            return jsonify({"error": "AI generated no parsable questions. Please try again. Raw response is in console.", "raw_response": generated_text}), 500
 
         # Post-processing to ensure correct answer matches an option
         for q in questions:
@@ -142,6 +154,7 @@ def generate_quiz():
     except Exception as e:
         print(f"Error generating content: {e}")
         return jsonify({"error": f"Failed to generate quiz from AI: {str(e)}"}), 500
+
 
 # --- API Endpoint for AI-powered result analysis ---
 @app.route('/analyze_results', methods=['POST'])
@@ -199,5 +212,7 @@ def analyze_results():
         return jsonify({"error": f"Failed to get AI analysis: {str(e)}", "score": correct_count}), 500
 
 
+# This part is ONLY for running the app on your local computer (e.g., python app.py)
+# Gunicorn (used by Render) does not use this part.
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)```
+    app.run(debug=True, port=5000)
