@@ -25,7 +25,7 @@ except KeyError:
 
 
 # --- AI Model Selection ---
-model = genai.GenerativeModel('gemini-pro-latest')
+model = genai.GenerativeModel('gemini-1.5-flash-latest')
 
 
 # --- Helper function to parse AI's text response into structured JSON ---
