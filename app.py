@@ -201,18 +201,3 @@ def analyze_results():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)```
-
-### What's New Here:
-
-1.  **Language Parameter:** Both `/generate_quiz` and `/analyze_results` now look for a `language` field in the JSON sent from the frontend.
-2.  **Dynamic Prompts:** The AI prompt is now dynamically changed based on the `language`. If it's 'hindi', it explicitly asks the AI for Hindi content and formatting.
-3.  **Robust Parsing:** The `parse_quiz_response` function can now understand both English (`Question`, `Options`) and Hindi (`प्रश्न`, `विकल्प`) keywords in the AI's response, making the parsing more resilient.
-4.  **Unicode Handling:** Added `ensure_ascii=False` when creating the JSON for the analysis prompt, which is good practice for handling non-English characters correctly.
-
-### Next Steps:
-
-1.  **Replace your old `app.py`** with this new complete code.
-2.  **Make sure you have the updated `index.html`, `style.css`, and `script.js` files** from my previous response.
-3.  **Run the servers** just as you did before (`python app.py` in one terminal, and `python -m http.server 8000` in another).
-
-Your site "VIPQuizs" should now be fully functional with the language toggle
